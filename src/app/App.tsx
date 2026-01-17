@@ -73,7 +73,7 @@ export default function App() {
 
   const text = {
     en: {
-      title: 'zwaj',
+      title: 'Our Wedding',
       subtitle: 'Counting down to our special day',
       footer: 'Made with love',
       by: 'by',
@@ -81,7 +81,7 @@ export default function App() {
       exitFullScreen: 'Exit Full Screen'
     },
     ar: {
-      title: 'zwaj',
+      title: 'حفل زفافنا',
       subtitle: 'العد التنازلي ليومنا الخاص',
       footer: 'صنع بحب',
       by: 'بواسطة',
