@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Share2, X, MessageCircle, Facebook, Twitter, Linkedin, Send, Image as ImageIcon, Link2, Download, Smartphone, Monitor } from 'lucide-react';
+import { Share2, X, MessageCircle, Facebook, Twitter, Linkedin, Send, Image as ImageIcon, Link2, Download } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface ShareButtonProps {
@@ -12,7 +12,6 @@ interface ShareButtonProps {
 export function ShareButton({ weddingDate, language, captureRef }: ShareButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [shareType, setShareType] = useState<'link' | 'image'>('link');
-    const [imageMode, setImageMode] = useState<'card' | 'full'>('card');
     const [customMessage, setCustomMessage] = useState('');
     const [generatedImage, setGeneratedImage] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -180,37 +179,16 @@ export function ShareButton({ weddingDate, language, captureRef }: ShareButtonPr
         }
     };
 
-    const captureFullScreen = async () => {
-        setIsOpen(false); // Hide modal
-        setIsGenerating(true);
-
-        // Wait for modal to close
-        setTimeout(async () => {
-            try {
-                await generateImage(document.body, {
-                    backgroundColor: '#F5F3EE', // Specific bg color to ensure it looks good
-                    windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight
-                });
-                setIsOpen(true); // Re-open modal
-            } catch (e) {
-                console.error(e);
-                setIsOpen(true);
-                setIsGenerating(false);
-            }
-        }, 500);
-    };
-
-    // Effect to auto-generate card when switching to 'image' & 'card' mode
+    // Effect to auto-generate card when switching to 'image' mode
     useEffect(() => {
-        if (isOpen && shareType === 'image' && imageMode === 'card' && !generatedImage) {
+        if (isOpen && shareType === 'image' && !generatedImage) {
             // Add a small delay to ensure any layout changes or animations are settled
             const timer = setTimeout(() => {
                 captureCard();
             }, 300);
             return () => clearTimeout(timer);
         }
-    }, [isOpen, shareType, imageMode]);
+    }, [isOpen, shareType]);
 
     const handleDownloadImage = () => {
         if (!generatedImage) return;
@@ -375,26 +353,6 @@ export function ShareButton({ weddingDate, language, captureRef }: ShareButtonPr
                             ) : (
                                 /* Image Mode */
                                 <div className="mb-6 space-y-4">
-                                    {/* Image Toggles */}
-                                    <div className="flex gap-3 justify-center">
-                                        <button
-                                            onClick={() => { setImageMode('card'); setGeneratedImage(null); }}
-                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors ${imageMode === 'card' ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-200 text-gray-500'}`}
-                                            style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
-                                        >
-                                            <Smartphone className="w-4 h-4" />
-                                            <span>{currentText.cardView}</span>
-                                        </button>
-                                        <button
-                                            onClick={() => { setImageMode('full'); captureFullScreen(); }}
-                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors ${imageMode === 'full' ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-200 text-gray-500'}`}
-                                            style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
-                                        >
-                                            <Monitor className="w-4 h-4" />
-                                            <span>{currentText.fullScreen}</span>
-                                        </button>
-                                    </div>
-
                                     {/* Preview Area */}
                                     <div className="bg-white p-2 rounded-lg shadow-sm border border-[#D4AF37]/20 min-h-[200px] flex items-center justify-center relative">
                                         {isGenerating ? (
@@ -410,7 +368,7 @@ export function ShareButton({ weddingDate, language, captureRef }: ShareButtonPr
                                                     {isRTL ? 'لم يتم إنشاء الصورة' : 'Image not generated'}
                                                 </p>
                                                 <button
-                                                    onClick={imageMode === 'card' ? captureCard : captureFullScreen}
+                                                    onClick={captureCard}
                                                     className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
                                                     style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
                                                 >
@@ -437,19 +395,21 @@ export function ShareButton({ weddingDate, language, captureRef }: ShareButtonPr
                             )}
 
                             {/* Share Options Grid - Contextual */}
-                            <div className="grid grid-cols-4 gap-3 mb-4">
-                                {shareOptions.map((option) => (
-                                    <motion.button
-                                        key={option.name}
-                                        onClick={option.action}
-                                        className="flex flex-col items-center justify-center gap-1 p-2 bg-white rounded-lg hover:shadow-md transition-all border border-transparent hover:border-[#D4AF37]/30"
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <option.icon className="w-6 h-6" style={{ color: option.color }} />
-                                    </motion.button>
-                                ))}
-                            </div>
+                            {shareType === 'link' && (
+                                <div className="grid grid-cols-4 gap-3 mb-4">
+                                    {shareOptions.map((option) => (
+                                        <motion.button
+                                            key={option.name}
+                                            onClick={option.action}
+                                            className="flex flex-col items-center justify-center gap-1 p-2 bg-white rounded-lg hover:shadow-md transition-all border border-transparent hover:border-[#D4AF37]/30"
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            <option.icon className="w-6 h-6" style={{ color: option.color }} />
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            )}
 
                             <motion.button
                                 onClick={handleNativeShare}
