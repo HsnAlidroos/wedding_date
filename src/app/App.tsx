@@ -8,10 +8,8 @@ import { Heart, Maximize2, Minimize2 } from 'lucide-react';
 
 export default function App() {
   const [language, setLanguage] = useState('en');
-  // Default wedding date: 6 months from now
-  const defaultDate = new Date();
-  defaultDate.setMonth(defaultDate.getMonth() + 6);
-  const [weddingDate, setWeddingDate] = useState(defaultDate.toISOString());
+  // Default wedding date: November 5, 2026
+  const [weddingDate, setWeddingDate] = useState('2026-11-05T00:00:00');
 
   interface Celebration {
     id: number;
