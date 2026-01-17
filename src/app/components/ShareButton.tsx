@@ -1,0 +1,447 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Share2, X, MessageCircle, Facebook, Twitter, Linkedin, Send, Image as ImageIcon, Link2, Download, Smartphone, Monitor } from 'lucide-react';
+import html2canvas from 'html2canvas';
+
+interface ShareButtonProps {
+    weddingDate: string;
+    language: string;
+    captureRef: React.RefObject<HTMLDivElement | null>;
+}
+
+export function ShareButton({ weddingDate, language, captureRef }: ShareButtonProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [shareType, setShareType] = useState<'link' | 'image'>('link');
+    const [imageMode, setImageMode] = useState<'card' | 'full'>('card');
+    const [customMessage, setCustomMessage] = useState('');
+    const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const text: Record<string, Record<string, string>> = {
+        en: {
+            shareButton: 'Share',
+            shareTitle: 'Share Your Special Day',
+            messagePlaceholder: 'Add a personal message (optional)',
+            shareVia: 'Share via',
+            close: 'Close',
+            shareElse: 'Share Else',
+            defaultMessage: `Join us in counting down to our wedding day! 💕`,
+            shareImage: 'Share Image',
+            shareLink: 'Share Link',
+            download: 'Download',
+            shareImageNative: 'Share Image',
+            back: 'Back',
+            generating: 'Generating...',
+            cardView: 'Card View',
+            fullScreen: 'Full Screen',
+            captureFull: 'Capture Full Screen',
+            downloadHint: 'Download or use the share button below to send the image.'
+        },
+        ar: {
+            shareButton: 'مشاركة',
+            shareTitle: 'شارك يومك الخاص',
+            messagePlaceholder: 'أضف رسالة شخصية (اختياري)',
+            shareVia: 'مشاركة عبر',
+            close: 'إإغلاق',
+            shareElse: 'مشاركة أخرى',
+            defaultMessage: `انضموا إلينا في العد التنازلي ليوم زفافنا! 💕`,
+            shareImage: 'مشاركة صورة',
+            shareLink: 'مشاركة رابط',
+            download: 'تحميل',
+            shareImageNative: 'مشاركة الصورة',
+            back: 'عودة',
+            generating: 'جاري إنشاء الصورة...',
+            cardView: 'بطاقة',
+            fullScreen: 'كامل الشاشة',
+            captureFull: 'التقاط كامل الشاشة',
+            downloadHint: 'قم بالتحميل أو استخدم زر المشاركة في الأسفل لإرسال الصورة.'
+        }
+    };
+
+    const currentText = text[language] || text.en;
+    const isRTL = language === 'ar';
+
+    // Format wedding date
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        if (isRTL) {
+            return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    const getMessage = () => {
+        const baseMessage = customMessage || currentText.defaultMessage;
+        const dateText = formatDate(weddingDate);
+        const websiteUrl = 'https://zwaj.hsnalidroos.dev';
+        return `${baseMessage} \n${dateText} \n\n${websiteUrl} `;
+    };
+
+    const shareUrl = 'https://zwaj.hsnalidroos.dev';
+
+    const handleLinkShare = (platformAction: () => void) => {
+        if (shareType === 'image') {
+            handleNativeImageShare();
+        } else {
+            platformAction();
+        }
+    };
+
+    const handleWhatsAppShare = () => handleLinkShare(() => {
+        const message = encodeURIComponent(getMessage() + '\n' + shareUrl);
+        window.open(`https://wa.me/?text=${message}`, '_blank');
+    });
+
+    const handleFacebookShare = () => handleLinkShare(() => {
+        const message = encodeURIComponent(getMessage());
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${message}`, '_blank');
+    });
+
+    const handleTwitterShare = () => handleLinkShare(() => {
+        const message = encodeURIComponent(getMessage());
+        window.open(`https://twitter.com/intent/tweet?text=${message}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+    });
+
+    const handleEmailShare = () => handleLinkShare(() => {
+        const subject = encodeURIComponent(isRTL ? 'دعوة زفاف' : 'Wedding Invitation');
+        const body = encodeURIComponent(getMessage());
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    });
+
+    const handleLinkedInShare = () => handleLinkShare(() => {
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank');
+    });
+
+    const handleTelegramShare = () => handleLinkShare(() => {
+        const message = encodeURIComponent(getMessage());
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${message}`, '_blank');
+    });
+
+    const handlePinterestShare = () => handleLinkShare(() => {
+        const description = encodeURIComponent(getMessage());
+        window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${description}`, '_blank');
+    });
+
+    const handleRedditShare = () => handleLinkShare(() => {
+        const title = encodeURIComponent(currentText.defaultMessage);
+        window.open(`https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${title}`, '_blank');
+    });
+
+    const generateImage = async (element: HTMLElement, options: any = {}) => {
+        if (!element) {
+            console.error('generateImage: Element is null');
+            return;
+        }
+        console.log('generateImage: Starting capture', element);
+        setIsGenerating(true);
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                backgroundColor: null,
+                useCORS: true,
+                logging: true,
+                ...options
+            });
+            console.log('generateImage: Capture success');
+            setGeneratedImage(canvas.toDataURL('image/png'));
+        } catch (error: any) {
+            console.error('Error generating image:', error);
+            alert('Error generating image: ' + error.message);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const captureCard = () => {
+        setGeneratedImage(null);
+        if (captureRef?.current) {
+            generateImage(captureRef.current, {
+                backgroundColor: '#F5F3EE'
+            });
+        }
+    };
+
+    const captureFullScreen = async () => {
+        setIsOpen(false); // Hide modal
+        setIsGenerating(true);
+
+        // Wait for modal to close
+        setTimeout(async () => {
+            try {
+                await generateImage(document.body, {
+                    backgroundColor: '#F5F3EE', // Specific bg color to ensure it looks good
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight
+                });
+                setIsOpen(true); // Re-open modal
+            } catch (e) {
+                console.error(e);
+                setIsOpen(true);
+                setIsGenerating(false);
+            }
+        }, 500);
+    };
+
+    // Effect to auto-generate card when switching to 'image' & 'card' mode
+    useEffect(() => {
+        if (isOpen && shareType === 'image' && imageMode === 'card' && !generatedImage) {
+            // Add a small delay to ensure any layout changes or animations are settled
+            const timer = setTimeout(() => {
+                captureCard();
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, shareType, imageMode]);
+
+    const handleDownloadImage = () => {
+        if (!generatedImage) return;
+        const link = document.createElement('a');
+        link.href = generatedImage;
+        link.download = `wedding-countdown-${Date.now()}.png`;
+        link.click();
+    };
+
+    const handleNativeImageShare = async () => {
+        if (!generatedImage) return;
+        try {
+            const blob = await (await fetch(generatedImage)).blob();
+            const file = new File([blob], 'wedding-countdown.png', { type: 'image/png' });
+            if (navigator.share) {
+                await navigator.share({
+                    title: isRTL ? 'دعوة زفاف' : 'Wedding Invitation',
+                    text: getMessage(),
+                    files: [file]
+                });
+            } else {
+                alert(isRTL ? 'المشاركة غير مدعومة على هذا المتصفح' : 'Sharing not supported on this browser');
+            }
+        } catch (error: any) {
+            console.error('Error sharing image:', error);
+            alert('Error sharing image: ' + error.message);
+        }
+    };
+
+    // Native Web Share API (Text/Link)
+    const handleNativeShare = async () => {
+        if (shareType === 'image') return handleNativeImageShare();
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: isRTL ? 'دعوة زفاف' : 'Wedding Invitation',
+                    text: getMessage(),
+                    url: shareUrl
+                });
+            } catch (err) { }
+        } else {
+            try {
+                await navigator.clipboard.writeText(`${getMessage()}\n\n${shareUrl}`);
+                alert(isRTL ? 'تم النسخ إلى الحافظة!' : 'Copied to clipboard!');
+            } catch (err) { }
+        }
+    };
+
+    const shareOptions = [
+        { name: 'WhatsApp', icon: MessageCircle, color: '#25D366', action: handleWhatsAppShare },
+        { name: 'Facebook', icon: Facebook, color: '#1877F2', action: handleFacebookShare },
+        { name: 'Twitter', icon: Twitter, color: '#1DA1F2', action: handleTwitterShare },
+        { name: 'Email', icon: Send, color: '#EA4335', action: handleEmailShare },
+        { name: 'LinkedIn', icon: Linkedin, color: '#0077B5', action: handleLinkedInShare },
+        { name: 'Telegram', icon: MessageCircle, color: '#0088CC', action: handleTelegramShare },
+        { name: 'Pinterest', icon: ImageIcon, color: '#BD081C', action: handlePinterestShare },
+        { name: 'Reddit', icon: Send, color: '#FF4500', action: handleRedditShare }
+    ];
+
+    const resetModal = () => {
+        setIsOpen(false);
+        setGeneratedImage(null);
+        setCustomMessage('');
+        setShareType('link'); // Reset to default
+    };
+
+    return (
+        <>
+            {/* Share Button */}
+            <motion.button
+                onClick={() => setIsOpen(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#D4AF37] text-white rounded-full hover:bg-[#C19B2E] transition-colors shadow-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
+            >
+                <Share2 className="w-5 h-5" />
+                <span>{currentText.shareButton}</span>
+            </motion.button>
+
+            {/* Share Modal */}
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={resetModal}
+                            className="fixed inset-0 bg-black/50 z-[10000] backdrop-blur-sm"
+                        />
+
+                        {/* Modal Content */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#F5F3EE] rounded-2xl shadow-2xl z-[10001] p-6 max-h-[90vh] overflow-y-auto"
+                            dir={isRTL ? 'rtl' : 'ltr'}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-4">
+                                <h2
+                                    className="text-2xl text-[#2C2C2C]"
+                                    style={{ fontFamily: isRTL ? 'Amiri, serif' : 'Playfair Display, serif' }}
+                                >
+                                    {currentText.shareTitle}
+                                </h2>
+                                <button onClick={resetModal} className="text-[#2C2C2C] hover:text-[#D4AF37]">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            {/* Tabs */}
+                            <div className="flex bg-gray-200 rounded-lg p-1 mb-6">
+                                <button
+                                    onClick={() => setShareType('link')}
+                                    className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${shareType === 'link' ? 'bg-white text-[#D4AF37] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
+                                >
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Link2 className="w-4 h-4" />
+                                        {currentText.shareLink}
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => setShareType('image')}
+                                    className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${shareType === 'image' ? 'bg-white text-[#D4AF37] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
+                                >
+                                    <div className="flex items-center justify-center gap-2">
+                                        <ImageIcon className="w-4 h-4" />
+                                        {currentText.shareImage}
+                                    </div>
+                                </button>
+                            </div>
+
+                            {shareType === 'link' ? (
+                                /* Link Mode */
+                                <>
+                                    <div className="mb-6">
+                                        <textarea
+                                            value={customMessage}
+                                            onChange={(e) => setCustomMessage(e.target.value)}
+                                            placeholder={currentText.messagePlaceholder}
+                                            className="w-full px-4 py-3 bg-white border-2 border-[#D4AF37]/30 rounded-lg focus:outline-none focus:border-[#D4AF37] resize-none"
+                                            rows={3}
+                                            style={{
+                                                fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif',
+                                                textAlign: isRTL ? 'right' : 'left'
+                                            }}
+                                        />
+                                        <p className="mt-2 text-sm text-[#8B7355]">{formatDate(weddingDate)}</p>
+                                    </div>
+                                    <p className="text-sm text-[#8B7355] mb-4">{currentText.shareVia}:</p>
+                                </>
+                            ) : (
+                                /* Image Mode */
+                                <div className="mb-6 space-y-4">
+                                    {/* Image Toggles */}
+                                    <div className="flex gap-3 justify-center">
+                                        <button
+                                            onClick={() => { setImageMode('card'); setGeneratedImage(null); }}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors ${imageMode === 'card' ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-200 text-gray-500'}`}
+                                            style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
+                                        >
+                                            <Smartphone className="w-4 h-4" />
+                                            <span>{currentText.cardView}</span>
+                                        </button>
+                                        <button
+                                            onClick={() => { setImageMode('full'); captureFullScreen(); }}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors ${imageMode === 'full' ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-200 text-gray-500'}`}
+                                            style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
+                                        >
+                                            <Monitor className="w-4 h-4" />
+                                            <span>{currentText.fullScreen}</span>
+                                        </button>
+                                    </div>
+
+                                    {/* Preview Area */}
+                                    <div className="bg-white p-2 rounded-lg shadow-sm border border-[#D4AF37]/20 min-h-[200px] flex items-center justify-center relative">
+                                        {isGenerating ? (
+                                            <div className="flex flex-col items-center gap-2 text-[#D4AF37]">
+                                                <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-sm" style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}>{currentText.generating}</span>
+                                            </div>
+                                        ) : generatedImage ? (
+                                            <img src={generatedImage} alt="Preview" className="w-full h-auto rounded max-h-[300px] object-contain" />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <p className="text-gray-400 text-sm" style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}>
+                                                    {isRTL ? 'لم يتم إنشاء الصورة' : 'Image not generated'}
+                                                </p>
+                                                <button
+                                                    onClick={imageMode === 'card' ? captureCard : captureFullScreen}
+                                                    className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                                                    style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
+                                                >
+                                                    {isRTL ? 'إعادة المحاولة' : 'Click to Retry'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {generatedImage && (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={handleDownloadImage}
+                                                className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#D4AF37] text-white rounded-lg hover:bg-[#C19B2E] transition-colors"
+                                                style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                <span>{currentText.download}</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-center text-gray-500" style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}>{currentText.downloadHint}</p>
+                                </div>
+                            )}
+
+                            {/* Share Options Grid - Contextual */}
+                            <div className="grid grid-cols-4 gap-3 mb-4">
+                                {shareOptions.map((option) => (
+                                    <motion.button
+                                        key={option.name}
+                                        onClick={option.action}
+                                        className="flex flex-col items-center justify-center gap-1 p-2 bg-white rounded-lg hover:shadow-md transition-all border border-transparent hover:border-[#D4AF37]/30"
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <option.icon className="w-6 h-6" style={{ color: option.color }} />
+                                    </motion.button>
+                                ))}
+                            </div>
+
+                            <motion.button
+                                onClick={handleNativeShare}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#D4AF37] text-white rounded-lg hover:bg-[#C19B2E] transition-colors"
+                                style={{ fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif' }}
+                            >
+                                <Share2 className="w-5 h-5" />
+                                <span>{currentText.shareElse}</span>
+                            </motion.button>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        </>
+    );
+}
