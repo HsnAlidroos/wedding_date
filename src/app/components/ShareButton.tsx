@@ -71,10 +71,29 @@ export function ShareButton({ weddingDate, language, captureRef }: ShareButtonPr
     };
 
     const getMessage = () => {
+        const now = new Date();
+        const target = new Date(weddingDate);
+        const difference = target.getTime() - now.getTime();
+
+        let timeString = '';
+        if (difference > 0) {
+            const totalDays = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const months = Math.floor(totalDays / 30);
+            const days = totalDays % 30;
+            const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((difference / 1000 / 60) % 60);
+
+            if (isRTL) {
+                timeString = `متبقي: ${months} شهر، ${days} يوم، ${hours} ساعة، و ${minutes} دقيقة`;
+            } else {
+                timeString = `Remaining: ${months} months, ${days} days, ${hours} hours, and ${minutes} minutes`;
+            }
+        }
+
         const baseMessage = customMessage || currentText.defaultMessage;
         const dateText = formatDate(weddingDate);
         const websiteUrl = 'https://zwaj.hsnalidroos.dev';
-        return `${baseMessage} \n${dateText} \n\n${websiteUrl} `;
+        return `${baseMessage} \n${dateText} \n${timeString} \n\n${websiteUrl} `;
     };
 
     const shareUrl = 'https://zwaj.hsnalidroos.dev';
