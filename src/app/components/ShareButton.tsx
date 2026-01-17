@@ -327,6 +327,22 @@ export function ShareButton({ weddingDate, language, captureRef }: ShareButtonPr
                                 </button>
                             </div>
 
+                            {/* Message input - Always visible */}
+                            <div className="mb-6">
+                                <textarea
+                                    value={customMessage}
+                                    onChange={(e) => setCustomMessage(e.target.value)}
+                                    placeholder={currentText.messagePlaceholder}
+                                    className="w-full px-4 py-3 bg-white border-2 border-[#D4AF37]/30 rounded-lg focus:outline-none focus:border-[#D4AF37] resize-none"
+                                    rows={3}
+                                    style={{
+                                        fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif',
+                                        textAlign: isRTL ? 'right' : 'left'
+                                    }}
+                                />
+                                <p className="mt-2 text-sm text-[#8B7355]">{formatDate(weddingDate)}</p>
+                            </div>
+
                             {/* Tabs */}
                             <div className="flex bg-gray-200 rounded-lg p-1 mb-6">
                                 <button
@@ -353,23 +369,9 @@ export function ShareButton({ weddingDate, language, captureRef }: ShareButtonPr
 
                             {shareType === 'link' ? (
                                 /* Link Mode */
-                                <>
-                                    <div className="mb-6">
-                                        <textarea
-                                            value={customMessage}
-                                            onChange={(e) => setCustomMessage(e.target.value)}
-                                            placeholder={currentText.messagePlaceholder}
-                                            className="w-full px-4 py-3 bg-white border-2 border-[#D4AF37]/30 rounded-lg focus:outline-none focus:border-[#D4AF37] resize-none"
-                                            rows={3}
-                                            style={{
-                                                fontFamily: isRTL ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif',
-                                                textAlign: isRTL ? 'right' : 'left'
-                                            }}
-                                        />
-                                        <p className="mt-2 text-sm text-[#8B7355]">{formatDate(weddingDate)}</p>
-                                    </div>
+                                <div className="mb-6">
                                     <p className="text-sm text-[#8B7355] mb-4">{currentText.shareVia}:</p>
-                                </>
+                                </div>
                             ) : (
                                 /* Image Mode */
                                 <div className="mb-6 space-y-4">
